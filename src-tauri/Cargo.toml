@@ -1,0 +1,22 @@
+[package]
+name = "gloss-desktop"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "gloss_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+rusqlite = { version = "0.38", features = ["bundled"] }
+
+[dev-dependencies]
+tempfile = "3"

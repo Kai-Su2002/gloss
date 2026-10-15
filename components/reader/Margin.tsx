@@ -5,6 +5,7 @@ import { anchorToRange, blockEl } from "@/lib/anchor";
 import { MARKERS } from "@/lib/settings";
 import { useStore, type Gloss, type Highlight } from "@/lib/store";
 import { GlossCard, marginStyle } from "./GlossCard";
+import { DESKTOP } from "@/lib/platform";
 
 /** Room between notes; one-line notes in a crowded stretch sit close, like a list. */
 const GAP = 16;
@@ -229,7 +230,7 @@ function EmptyMargin({ top }: { top: number }) {
       style={{ top, animationDelay: "500ms" }}
     >
       <p className="font-medium text-ink-2">This area is for notes.</p>
-      <p className="mt-1">Select any passage, then just start typing to ask.</p>
+      <p className="mt-1">{DESKTOP ? "Select any passage, then start typing a note. Your thoughts stay beside the text." : "Select any passage, then just start typing to ask."}</p>
     </div>
   );
 }

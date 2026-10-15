@@ -15,6 +15,8 @@ import { applySettings } from "@/lib/settings";
 import { backfill } from "@/lib/shelving";
 import { useStore } from "@/lib/store";
 import { watchShelf } from "@/lib/sync";
+import { DESKTOP } from "@/lib/platform";
+import { LocalImport } from "./LocalImport";
 import { AddButton, AddPanel, type AddTab } from "./AddPanel";
 import { Arrivals, type Wave } from "./Arrivals";
 import { Glyph } from "./Book";
@@ -81,7 +83,7 @@ export function Library() {
   useEffect(() => () => clearTimeout(waveTimer.current), []);
 
   // Signed in, the shelf is checked every few seconds while it's open, so an agent's saves arrive as you look.
-  useEffect(() => watchShelf(), []);
+  useEffect(() => DESKTOP ? undefined : watchShelf(), []);
 
   // The top bar frosts over once the page moves under it.
   const [scrolled, setScrolled] = useState(false);
@@ -125,12 +127,12 @@ export function Library() {
 
   // Texts shelved before the library existed are sorted onto topics the first time it opens.
   useEffect(() => {
-    if (hydrated) void backfill(useStore.getState().library);
+    if (hydrated && !DESKTOP) void backfill(useStore.getState().library);
   }, [hydrated, library.length]);
 
   // Painted covers, when they're turned on: one at a time, for every sorted text without one.
   useEffect(() => {
-    if (hydrated && prefs.paintedCovers) void paintAll(useStore.getState().library);
+    if (hydrated && !DESKTOP && prefs.paintedCovers) void paintAll(useStore.getState().library);
   }, [hydrated, prefs.paintedCovers, library]);
 
   const own = library.filter((x) => x.origin !== "sample");
@@ -393,7 +395,7 @@ export function Library() {
                 {hydrated && shown.size === 0 && books.length > 0 && (
                   <p className="py-6 text-center text-[14px] text-ink-3">Nothing on the shelves matches{q ? <> &ldquo;{q}&rdquo;</> : ""}.</p>
                 )}
-                {hydrated && own.length < SAMPLES_UNTIL ? (
+                {hydrated && own.length < SAMPLES_UNTIL && !DESKTOP ? (
                   <Starter count={own.length} signedIn={Boolean(isSignedIn)} onAdd={setAdding} />
                 ) : (
                   hydrated && <p className="lib-hint">Click a spine to take it down. Arrow keys walk the shelf.</p>
@@ -451,7 +453,7 @@ export function Library() {
           }}
         />
       )}
-      {adding && <AddPanel tab={adding} onTab={setAdding} onClose={() => setAdding(null)} signedIn={Boolean(isSignedIn)} />}
+      {adding && (DESKTOP ? <LocalImport onClose={() => setAdding(null)} /> : <AddPanel tab={adding} onTab={setAdding} onClose={() => setAdding(null)} signedIn={Boolean(isSignedIn)} />)}
     </div>
   );
 }

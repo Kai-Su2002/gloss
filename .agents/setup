@@ -11,6 +11,30 @@ printf 'Using Node.js %s and npm %s\n' "$(node --version)" "$(npm --version)"
 printf 'Installing dependencies (including development tools)...\n'
 time npm install --include=dev --prefer-offline --no-audit --no-fund
 
+printf 'Preparing the Tauri toolchain...\n'
+packages=(build-essential curl pkg-config libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf)
+missing=()
+for package in "${packages[@]}"; do
+  if ! dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -qx 'install ok installed'; then
+    missing+=("$package")
+  fi
+done
+if ((${#missing[@]})); then
+  sudo apt-get update
+  sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${missing[@]}"
+fi
+
+if [[ ! -x "$HOME/.cargo/bin/rustup" ]]; then
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+fi
+# The installer cannot update this running process; rustup persists the login profile.
+export PATH="$HOME/.cargo/bin:$PATH"
+if ! rustup component list --installed | grep -q '^rustfmt-'; then
+  rustup component add rustfmt
+fi
+printf 'Fetching locked Rust dependencies with %s...\n' "$(rustc --version)"
+time cargo fetch --locked --manifest-path src-tauri/Cargo.toml
+
 printf 'Preparing local environment template...\n'
 if [[ ! -f .env.local ]]; then
   cp -- .env.example .env.local

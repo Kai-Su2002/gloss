@@ -1,0 +1,21 @@
+:root {
+  --nf-serif: "Newsreader Variable";
+  --nf-sans: "Schibsted Grotesk Variable";
+  --nf-book: "Literata Variable";
+  --nf-legible: "Atkinson Hyperlegible Next Variable";
+}
+
+.desktop-preview {
+  position: relative;
+  z-index: 90;
+  padding: 6px 16px;
+  background: var(--bg-sunk);
+  color: var(--ink-3);
+  text-align: center;
+  font-size: 11px;
+}
+
+/* A browser-only preview banner must not cover the reader's fixed toolbar. */
+body:has(.desktop-preview) .reader-grid {
+  scroll-margin-top: 32px;
+}

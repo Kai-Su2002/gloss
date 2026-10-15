@@ -10,6 +10,7 @@ import { SettingsMenu } from "@/components/ui/SettingsMenu";
 import { barBtn } from "@/components/ui/Popover";
 import { useGlosses, useHighlights, useStore } from "@/lib/store";
 import { useReader } from "./context";
+import { DESKTOP } from "@/lib/platform";
 
 export function TopBar({ currentN, pastTitle, listenFrom }: { currentN: number | null; pastTitle: boolean; listenFrom: () => string | null }) {
   const { ix, jumpTo } = useReader();
@@ -121,9 +122,9 @@ export function TopBar({ currentN, pastTitle, listenFrom }: { currentN: number |
               <Keyboard size={17} strokeWidth={1.8} />
             </button>
           </span>
-          <ListenButton from={listenFrom} />
+          {!DESKTOP && <ListenButton from={listenFrom} />}
           <SettingsMenu />
-          <KeyMenu />
+          {!DESKTOP && <KeyMenu />}
           <button
             type="button"
             className={`${barBtn} !px-3 ${notebookOpen ? "bg-sunk text-ink" : ""}`}
@@ -139,7 +140,7 @@ export function TopBar({ currentN, pastTitle, listenFrom }: { currentN: number |
               <span className="min-w-[18px] rounded-full bg-[var(--rubric)] px-1.5 text-center text-[11px] font-semibold leading-[18px] tabular-nums text-white">{count}</span>
             )}
           </button>
-          <Account />
+          {!DESKTOP && <Account />}
         </nav>
       </div>
       <span ref={barRef} aria-hidden className="absolute inset-x-0 -bottom-px h-[2px] origin-left bg-[var(--rubric)] opacity-80" style={{ transform: "scaleX(0)" }} />

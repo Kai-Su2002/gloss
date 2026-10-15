@@ -5,6 +5,7 @@ import type { Action } from "./actions";
 import type { Article, BriefData } from "./article";
 import { modelOf, type ModelKey, type Source, type Usage } from "./models";
 import { DEFAULT_SETTINGS, SETTINGS_KEY, type Marker, type Settings } from "./settings";
+import { desktopRead, desktopWrite, hasNativeStorage, storageError } from "./desktop-storage";
 
 /** A point in the text: block id and a character offset into its plain text. */
 export type Point = { b: string; o: number };
@@ -215,6 +216,7 @@ export const useStore = create<State>((set, get) => ({
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     } catch {}
+    if (hasNativeStorage()) void desktopWrite("save_state", { key: SETTINGS_KEY, value: JSON.stringify(settings) }).catch(storageError);
   },
 
   setUI: (u) => set(u),
@@ -372,8 +374,25 @@ export const useStore = create<State>((set, get) => ({
 
 /* Debounced persistence. Streaming updates land many times a second, so the
    write waits for a pause rather than serializing on every token. */
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Also used before a desktop window closes: do not lose the last debounced edit. */
+export async function flushStore(): Promise<void> {
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = null;
+  const { glosses, highlights, briefs, progress, library, settings, hydrated } = useStore.getState();
+  if (!hydrated) return;
+  const value = JSON.stringify({ glosses, highlights, briefs, progress, library });
+  try {
+    localStorage.setItem(KEY, value);
+  } catch {}
+  if (hasNativeStorage()) {
+    await desktopWrite("save_state", { key: KEY, value });
+    await desktopWrite("save_state", { key: SETTINGS_KEY, value: JSON.stringify(settings) });
+  }
+}
+
 if (typeof window !== "undefined") {
-  let t: ReturnType<typeof setTimeout> | null = null;
   useStore.subscribe((st, prev) => {
     if (!st.hydrated) return;
     if (
@@ -384,13 +403,8 @@ if (typeof window !== "undefined") {
       st.library === prev.library
     )
       return;
-    if (t) clearTimeout(t);
-    t = setTimeout(() => {
-      const { glosses, highlights, briefs, progress, library } = useStore.getState();
-      try {
-        localStorage.setItem(KEY, JSON.stringify({ glosses, highlights, briefs, progress, library }));
-      } catch {}
-    }, 400);
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(() => void flushStore().catch(storageError), 400);
   });
 }
 
@@ -426,6 +440,15 @@ async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBReq
 }
 
 export async function saveDoc(a: Article): Promise<boolean> {
+  if (hasNativeStorage()) {
+    try {
+      await desktopWrite("save_document", { id: a.id, document: JSON.stringify(a) });
+      return true;
+    } catch (error) {
+      storageError(error);
+      return false;
+    }
+  }
   try {
     await tx("readwrite", (s) => s.put(a, a.id));
     return true;
@@ -440,6 +463,10 @@ export async function saveDoc(a: Article): Promise<boolean> {
 }
 
 export async function loadDoc(id: string): Promise<Article | null> {
+  if (hasNativeStorage()) {
+    const raw = await desktopRead<string | null>("load_document", { id });
+    return raw ? JSON.parse(raw) as Article : null;
+  }
   try {
     const a = await tx<Article | undefined>("readonly", (s) => s.get(id));
     if (a) return a;
@@ -460,6 +487,7 @@ export async function loadDoc(id: string): Promise<Article | null> {
 
 /** Moves every text an older build left in localStorage into IndexedDB, freeing room for notes. */
 async function migrateDocs() {
+  if (hasNativeStorage()) return;
   let ids: string[] = [];
   try {
     ids = Object.keys(localStorage).filter((k) => k.startsWith(DOC_PREFIX)).map((k) => k.slice(DOC_PREFIX.length));
@@ -469,6 +497,15 @@ async function migrateDocs() {
 
 /** Keep an imported PDF's original file, by its article id. */
 export async function savePdf(id: string, file: Blob): Promise<boolean> {
+  if (hasNativeStorage()) {
+    try {
+      await desktopWrite("save_pdf", { id, data: Array.from(new Uint8Array(await file.arrayBuffer())) });
+      return true;
+    } catch (error) {
+      storageError(error);
+      return false;
+    }
+  }
   try {
     await tx("readwrite", (s) => s.put(file, id), FILES);
     return true;
@@ -479,6 +516,10 @@ export async function savePdf(id: string, file: Blob): Promise<boolean> {
 
 /** The original PDF behind an article, when this browser imported it. */
 export async function loadPdf(id: string): Promise<Blob | null> {
+  if (hasNativeStorage()) {
+    const bytes = await desktopRead<number[] | null>("load_pdf", { id });
+    return bytes ? new Blob([new Uint8Array(bytes)], { type: "application/pdf" }) : null;
+  }
   try {
     return (await tx<Blob | undefined>("readonly", (s) => s.get(id), FILES)) ?? null;
   } catch {
@@ -488,6 +529,7 @@ export async function loadPdf(id: string): Promise<Blob | null> {
 
 /** Forget this device's copy of a text (not its PDF): it changed elsewhere and is fetched again on open. */
 export async function forgetDoc(id: string) {
+  if (hasNativeStorage()) return desktopWrite("forget_document", { id });
   try {
     localStorage.removeItem(DOC_PREFIX + id);
   } catch {}
@@ -497,6 +539,10 @@ export async function forgetDoc(id: string) {
 }
 
 async function dropDoc(id: string) {
+  if (hasNativeStorage()) {
+    await desktopWrite("delete_document", { id }).catch(storageError);
+    return;
+  }
   try {
     localStorage.removeItem(DOC_PREFIX + id);
   } catch {}

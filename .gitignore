@@ -8,3 +8,6 @@ next-env.d.ts
 .DS_Store
 .claude/
 .amp/portals/
+dist-desktop/
+src-tauri/target/
+src-tauri/gen/

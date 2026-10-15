@@ -32,11 +32,70 @@
 5. Read: select text and type to ask, `/` asks about the whole text, `j` and `k` walk paragraphs, `B` glosses the whole text, `F` is focus mode, `?` lists every key
 6. Check: `npm run lint && npm run build`, then deploy with `vercel --prod` (set the same variables, plus `NEXT_PUBLIC_SITE_URL=https://usegloss.io`, in the project first)
 
+## Desktop literature library (first version)
+
+The desktop app uses **Tauri 2 + Rust + SQLite**, reusing Gloss's bookcase,
+reader, themes, highlights and margin notes. `desktop/` is a separate Vite entry
+point; the Next.js website and its server routes remain available separately.
+It does not wrap the hosted website or require a Next.js server at runtime.
+
+- Import local text PDFs (up to 400 pages), Markdown and plain text; keep original
+  PDFs, extracted documents, shelf entries, notes and reading progress locally.
+- The native app stores these in `gloss.sqlite3` in Tauri's application data
+  directory (`~/Library/Application Support/io.gloss.desktop/` on macOS).
+  SQLite is authoritative; browser storage is only a synchronous UI cache.
+  Back up the **whole directory with the app closed**, not just a live SQLite file.
+- No account, API key or network is needed. Fonts and PDF parsing are bundled.
+  AI, OCR, cloud sync, URL import and automatic classification are intentionally
+  unavailable in this first desktop version. It is not yet a full citation manager:
+  DOI metadata retrieval, BibTeX/RIS import and citation generation are future work.
+- PDFs are read as extracted text, not a full-fidelity page viewer. Do not remove
+  your source files until you have an independent backup. Desktop and web libraries
+  are separate; there is no automatic migration between them.
+
+### Develop and build
+
+Install Node.js 22.12+ and stable Rust, plus the [Tauri system
+prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS. macOS needs
+Xcode Command Line Tools. In an Amp orb, `.agents/setup` prepares the Linux toolchain.
+
+```sh
+npm install
+npm run desktop dev           # native app + Vite hot reload
+npm run desktop:build         # frontend and TypeScript check
+npm run desktop:test          # native storage and navigation tests
+```
+
+`npm run desktop:dev` alone is a **browser UI preview**: it uses browser storage,
+not SQLite. A banner makes this distinction explicit. The installed app uses
+native storage. To build an Apple Silicon DMG, run on macOS:
+
+```sh
+rustup target add aarch64-apple-darwin
+npm run desktop build -- --target aarch64-apple-darwin --bundles dmg -- --locked
+```
+
+### Releases and macOS security
+
+`.github/workflows/desktop.yml` builds `Gloss_<version>_aarch64.dmg` on macOS.
+A manual workflow run only uploads a build artifact. Pushing a `desktop-vX.Y.Z`
+tag builds and publishes a GitHub Release; do this only when ready to publish.
+The version is taken from the tag, or `src-tauri/tauri.conf.json` for manual builds.
+
+The current configuration uses **ad-hoc signing**, not Apple Developer ID signing
+or notarization. It does not require a paid Apple account, but downloaded builds
+can trigger Gatekeeper. Only explicitly allow an app you trust in macOS Privacy
+& Security; do not disable Gatekeeper globally. To distribute without that
+warning, configure Developer ID signing and notarization using an Apple Developer
+Program membership and protected CI secrets. That paid path is **not configured**.
+Creating this workflow does not itself publish a release.
+
 ### Amp orbs
 
 `.agents/setup` uses the orb's preinstalled Node.js/npm, installs dependencies from
-`package-lock.json` (including development tools), and copies `.env.example` to
-`.env.local` only if it is missing. Amp snapshots the prepared dependencies for
+`package-lock.json` (including development tools), installs missing Linux Tauri
+system packages and stable Rust, fetches the locked Cargo dependencies, and copies
+`.env.example` to `.env.local` only if it is missing. Amp snapshots these for
 future orbs; warm setup runs reuse the installed packages instead of removing
 them with `npm ci`. `.agents/resume` only restores a missing environment template
 and never reinstalls dependencies.

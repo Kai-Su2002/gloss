@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { DESKTOP } from "@/lib/platform";
 import { useReader } from "./context";
 
 /** A floating preview of the paragraph a citation points to. */
@@ -38,6 +39,16 @@ const KEYS: [string, string][] = [
   ["?", "This list"],
 ];
 
+const DESKTOP_KEYS: [string, string][] = [
+  ["Select text, then type", "Make a note"],
+  ["J  K", "Next and previous paragraph"],
+  ["Enter", "Select the current paragraph"],
+  ["N", "Notebook"],
+  ["F", "Focus mode"],
+  ["Esc", "Close or step back"],
+  ["?", "This list"],
+];
+
 export function Shortcuts() {
   const open = useStore((s) => s.shortcutsOpen);
   const setUI = useStore((s) => s.setUI);
@@ -58,7 +69,7 @@ export function Shortcuts() {
           </button>
         </div>
         <dl className="divide-y divide-rule">
-          {KEYS.map(([k, v]) => (
+          {(DESKTOP ? DESKTOP_KEYS : KEYS).map(([k, v]) => (
             <div key={k} className="flex items-center justify-between gap-4 py-2.5">
               <dt className="flex gap-1">
                 {k.includes(",") || k.length > 6

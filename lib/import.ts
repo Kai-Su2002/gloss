@@ -3,6 +3,7 @@
 import { textToArticle, wordCount, type Article } from "./article";
 import { shelveText } from "./shelving";
 import { savePdf, saveDoc, useStore, type LibraryItem } from "./store";
+import { DESKTOP } from "./platform";
 
 /** `needKey`: the import needs the reader's own Together key (a long PDF, or free use spent). `file`: the original, kept with a PDF. */
 export type ImportResult = { ok: true; article: Article; file?: Blob } | { ok: false; error: string; needKey?: boolean };
@@ -61,10 +62,10 @@ export function importFromText(text: string): ImportResult {
 export async function keep(a: Article, file?: Blob, extra?: Partial<LibraryItem>): Promise<string | null> {
   if (!a.blocks.length) return "There was no readable text in that.";
   if (!(await saveDoc(a))) return "This browser's storage is full. Remove something from your shelf and try again.";
-  // The original is a nicety for reading it again; the text is what matters, so a failure here is quiet.
-  if (file) await savePdf(a.id, file);
+  // A desktop literature library must retain the original, not just its extracted text.
+  if (file && !(await savePdf(a.id, file)) && DESKTOP) return "Could not save the original PDF. Free some disk space and try again.";
   useStore.getState().addToLibrary(a, wordCount(a), extra);
-  if (!extra?.topic) void shelveText(a);
+  if (!DESKTOP && !extra?.topic) void shelveText(a);
   return null;
 }
 

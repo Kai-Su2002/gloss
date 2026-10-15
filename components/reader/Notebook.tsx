@@ -13,6 +13,7 @@ import { notesMarkdown, pairsOf } from "@/lib/export";
 import { Answer, Sources } from "./Answer";
 import { Writing } from "./Writing";
 import { useReader } from "./context";
+import { DESKTOP } from "@/lib/platform";
 
 type Entry = { kind: "gloss"; g: Gloss; key: string } | { kind: "hl"; h: Highlight; key: string };
 
@@ -139,7 +140,7 @@ export function Notebook() {
           <GlossMark className="size-11 text-ink-4" />
           <p className="mt-5 font-serif text-[20px] leading-tight text-ink">Nothing here yet</p>
           <p className="mt-2 max-w-[270px] text-[13.5px] leading-relaxed text-ink-3">
-            Select a line and type a question, or highlight it. Every question and answer lands here, in reading order.
+            {DESKTOP ? "Select a passage to highlight it or write a note. Your annotations are kept locally, in reading order." : "Select a line and type a question, or highlight it. Every question and answer lands here, in reading order."}
           </p>
         </div>
       ) : (
@@ -151,7 +152,7 @@ export function Notebook() {
               </li>
             ))}
           </ol>
-          <Show when="signed-out">
+          {!DESKTOP && <Show when="signed-out">
             <p className="px-1 pb-1 pt-4 text-center text-[12.5px] leading-relaxed text-ink-3">
               These live in this browser only.{" "}
               <SignInButton mode="modal">
@@ -161,7 +162,7 @@ export function Notebook() {
               </SignInButton>{" "}
               to keep them on every device.
             </p>
-          </Show>
+          </Show>}
         </div>
       )}
     </aside>

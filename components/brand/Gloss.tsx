@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { TogetherLink } from "./Together";
+import { DESKTOP } from "@/lib/platform";
 
 /** Lines of text with a note in the margin: the whole idea in 24px. */
 export function GlossMark({ className = "size-6" }: { className?: string }) {
@@ -35,7 +36,7 @@ export function Lockup({ href = "/" }: { href?: string }) {
         <GlossWordmark />
       </Link>
       <span aria-hidden className="h-[18px] w-px bg-rule-strong" />
-      <TogetherLink />
+      {DESKTOP ? <span className="text-[12px] text-ink-3">Local literature library</span> : <TogetherLink />}
     </div>
   );
 }

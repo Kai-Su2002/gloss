@@ -8,6 +8,7 @@ import { applySettings, DEFAULT_SETTINGS, FACES, MARKERS, PENS, resolveTheme, TH
 import { useStore } from "@/lib/store";
 import { Popover, barBtn } from "./Popover";
 import { setLibraryPrefs, useLibraryPrefs } from "@/lib/library-prefs";
+import { DESKTOP } from "@/lib/platform";
 
 function Seg<T extends string>({ value, options, onChange, label }: { value: T; options: { key: T; label: ReactNode }[]; onChange: (v: T) => void; label: string }) {
   return (
@@ -194,7 +195,7 @@ export function SettingsMenu({ compact = false }: { compact?: boolean }) {
                 options={[
                   { key: "look", label: "Look" },
                   { key: "text", label: "Text" },
-                  { key: "answers", label: "Answers" },
+                  ...(!DESKTOP ? [{ key: "answers" as const, label: "Answers" }] : []),
                 ]}
               />
             </div>
@@ -264,11 +265,11 @@ export function SettingsMenu({ compact = false }: { compact?: boolean }) {
                     <Chip label="Numbers" icon={<Pilcrow size={14} />} on={settings.numbers} onChange={(v) => set({ numbers: v })} />
                     <Chip label="Map" icon={<MapIcon size={14} />} on={settings.rail} onChange={(v) => set({ rail: v })} />
                     <Chip label="Focus" icon={<Focus size={14} />} on={focusMode} onChange={(v) => setUI({ focusMode: v })} />
-                    <Chip label="Listen" icon={<Headphones size={14} />} on={settings.listen} onChange={(v) => set({ listen: v })} />
+                    {!DESKTOP && <Chip label="Listen" icon={<Headphones size={14} />} on={settings.listen} onChange={(v) => set({ listen: v })} />}
                   </div>
                 </>
               )}
-              <PaintedCovers />
+              {!DESKTOP && <PaintedCovers />}
             </div>
           )}
 

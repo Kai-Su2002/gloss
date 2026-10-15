@@ -9,6 +9,7 @@ import { startGloss } from "@/lib/ask";
 import { uid, useStore, type Anchor } from "@/lib/store";
 import { useReader } from "./context";
 import { WebSwitch } from "./WebSwitch";
+import { DESKTOP } from "@/lib/platform";
 
 type LensState = {
   anchor: Anchor;
@@ -73,6 +74,11 @@ export function Lens({ rootEl, openHighlight }: { rootEl: HTMLElement | null; op
       st.addHighlight({ id: uid(), articleId: ix.article.id, anchor: l.anchor, createdAt: Date.now(), color: st.settings.marker, note });
     }
   }, [ix]);
+
+  useEffect(() => {
+    window.addEventListener("gloss:before-close", saveNote);
+    return () => window.removeEventListener("gloss:before-close", saveNote);
+  }, [saveNote]);
 
   const close = useCallback(
     (clearSelection = true) => {
@@ -210,7 +216,7 @@ export function Lens({ rootEl, openHighlight }: { rootEl: HTMLElement | null; op
       const l = lensRef.current;
       if (!l) return;
       setDraft(initial);
-      setLens({ ...l, mode: "ask" });
+      setLens({ ...l, mode: DESKTOP ? "note" : "ask" });
       setMenu(false);
       if (!l.highlightId) setUI({ pending: l.anchor });
       window.getSelection()?.removeAllRanges();
@@ -387,6 +393,7 @@ export function Lens({ rootEl, openHighlight }: { rootEl: HTMLElement | null; op
           </form>
         ) : lens.mode === "actions" ? (
           <div className="no-scrollbar flex max-w-[calc(100vw-24px)] items-center gap-0.5 overflow-x-auto">
+            {!DESKTOP && <>
             <button
               type="button"
               onClick={() => toAsk("")}
@@ -418,6 +425,7 @@ export function Lens({ rootEl, openHighlight }: { rootEl: HTMLElement | null; op
             </button>
             <span className="mx-[3px] h-4 w-px shrink-0 bg-lens-mute/30" aria-hidden />
 
+            </>}
             {existing ? (
               <>
                 <div className="flex items-center gap-2 px-2" role="radiogroup" aria-label="Highlight colour">

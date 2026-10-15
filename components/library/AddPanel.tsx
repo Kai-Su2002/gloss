@@ -7,6 +7,7 @@ import { BookOpen, BookmarkPlus, Check, Copy, Loader2, Plus, Trash2, X } from "l
 import { importFromUrl, keep, looksLikeUrl } from "@/lib/import";
 import { normalizeUrl } from "@/lib/links";
 import { useStore } from "@/lib/store";
+import { DESKTOP } from "@/lib/platform";
 import { Mark, MarkStack, type AgentMark } from "./AgentMarks";
 import { Glyph } from "./Book";
 
@@ -65,10 +66,10 @@ export function AddPanel({ tab, onTab, onClose, signedIn }: { tab: AddTab; onTab
 export function AddButton({ onClick, compact }: { onClick: () => void; compact?: boolean }) {
   return (
     <button type="button" onClick={onClick} className={`lib-add${compact ? " is-compact" : ""}`}>
-      <MarkStack size={compact ? 22 : 26} />
+      {DESKTOP ? <BookOpen size={compact ? 22 : 26} /> : <MarkStack size={compact ? 22 : 26} />}
       <span className="min-w-0 text-left">
-        <span className="lib-add-title">Add articles</span>
-        {!compact && <span className="lib-add-sub">Connect an agent, or paste links</span>}
+        <span className="lib-add-title">{DESKTOP ? "Import papers" : "Add articles"}</span>
+        {!compact && <span className="lib-add-sub">{DESKTOP ? "PDF, Markdown or text · kept locally" : "Connect an agent, or paste links"}</span>}
       </span>
       {!compact && (
         <span className="lib-add-plus" aria-hidden>

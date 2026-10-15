@@ -3,6 +3,7 @@
 import type { LayoutBlock } from "@llamaindex/liteparse-wasm";
 import { inlineMd, markdownBlocks, slugify, tidyTitle, undash, type Article, type Block } from "./article";
 import { readApiKey } from "./ask";
+import { DESKTOP } from "./platform";
 
 /**
  * PDF to Gloss blocks, in two passes.
@@ -71,7 +72,12 @@ export async function pdfToArticle(file: File, onProgress?: PdfProgress): Promis
   const total = session.totalPages;
   const pages = Math.min(total, PDF_MAX_PAGES);
   const label = `${pages} page${pages === 1 ? "" : "s"}`;
-  if (pages > PDF_FREE_PAGES && !readApiKey()) {
+  if (DESKTOP && total > PDF_MAX_PAGES) {
+    session.free();
+    parser.free();
+    throw new PdfError(`This PDF has ${total} pages. Split PDFs over ${PDF_MAX_PAGES} pages before importing.`);
+  }
+  if (!DESKTOP && pages > PDF_FREE_PAGES && !readApiKey()) {
     session.free();
     throw new PdfError(`This PDF has ${pages} pages. PDFs over ${PDF_FREE_PAGES} pages use your own Together key, since every question sends the whole text.`, true);
   }
@@ -117,6 +123,7 @@ export async function pdfToArticle(file: File, onProgress?: PdfProgress): Promis
   hard = hard.filter((p) => p <= pages).sort((a, b) => a - b).slice(0, UPGRADE_MAX);
   parser.free();
   const vision = new Map<number, Block[]>();
+  if (DESKTOP && unreadable.length) throw new PdfError("This PDF contains scanned or unreadable pages. Run OCR on the PDF before importing; desktop OCR is not available yet.");
   if (unreadable.length) await readByVision(lp, bytes, unreadable, vision, onProgress);
 
   // Assemble in page order: the vision model's reading replaces that page's text layer. Every block

@@ -13,6 +13,7 @@ import { indexArticle } from "@/lib/doc";
 import { fetchText } from "@/lib/sync";
 import { loadDoc, useGlosses, useHighlights, useStore, type Anchor } from "@/lib/store";
 import { applySettings } from "@/lib/settings";
+import { DESKTOP } from "@/lib/platform";
 import { GlossWordmark } from "@/components/brand/Gloss";
 import { Block, type Mark } from "./Block";
 import { Brief } from "./Brief";
@@ -43,8 +44,9 @@ export function Reader({ id, initial }: { id: string; initial: Article | null })
     if (!initial) {
       // Not on this device: it may be in the reader's account, fetched now that it is opened.
       void loadDoc(id)
-        .then((a) => a ?? fetchText(id))
-        .then((a) => (a ? setArticle(a) : setMissing(true)));
+        .then((a) => a ?? (DESKTOP ? null : fetchText(id)))
+        .then((a) => (a ? setArticle(a) : setMissing(true)))
+        .catch(() => setMissing(true));
     }
   }, [hydrate, id, initial]);
 
@@ -80,7 +82,7 @@ export function Reader({ id, initial }: { id: string; initial: Article | null })
         <div>
           <GlossWordmark />
           <p className="mt-6 font-serif text-[26px] text-ink">This text is not on this device.</p>
-          <p className="mt-2 text-[14px] text-ink-3">Imported texts live in the browser that imported them, or in your account when you are signed in.</p>
+          <p className="mt-2 text-[14px] text-ink-3">{DESKTOP ? "Could not load this paper from your local library. Check the storage warning, or import it again." : "Imported texts live in the browser that imported them, or in your account when you are signed in."}</p>
           <Link href="/" className="mt-6 inline-flex h-10 items-center rounded-full bg-ink px-5 text-[14px] font-medium text-bg">
             Back to the library
           </Link>
@@ -427,6 +429,7 @@ function ReaderInner({ article }: { article: Article }) {
           break;
         case "b":
         case "B": {
+          if (DESKTOP) break;
           const b = st.briefs[articleId];
           if (!b || b.status === "error") fetchBrief(ix);
           else setUI({ briefOpen: !st.briefOpen });
@@ -526,9 +529,9 @@ function ReaderInner({ article }: { article: Article }) {
                     </a>
                   )}
                 </div>
-                <CarefulRead article={article} />
+                {!DESKTOP && <CarefulRead article={article} />}
                 <div className="focus-hide rise" style={{ animationDelay: "200ms" }}>
-                  <Brief />
+                  {!DESKTOP && <Brief />}
                 </div>
               </header>
 
@@ -556,13 +559,13 @@ function ReaderInner({ article }: { article: Article }) {
                   ❦
                 </p>
                 {article.source && <p>From {article.source}.</p>}
-                <p className="mt-1">
+                {!DESKTOP && <p className="mt-1">
                   Glosses are powered by DeepSeek V4.1 Flash, served by{" "}
                   <a href={BRAND.togetherUrl} target="_blank" rel="noopener noreferrer" className="text-ink-2 underline decoration-rule-strong underline-offset-4 hover:text-ink">
                     Together AI
                   </a>
                   .
-                </p>
+                </p>}
                 <div className="mt-6 flex flex-wrap gap-2">
                   <button type="button" onClick={() => setUI({ notebookOpen: true })} className="h-9 rounded-full border border-rule px-4 text-[13px] font-medium text-ink-2 hover:border-rule-strong hover:text-ink">
                     Open your notebook
@@ -573,7 +576,7 @@ function ReaderInner({ article }: { article: Article }) {
                 </div>
               </footer>
 
-              <Composer ref={composerRef} currentBlock={askAnchor} suggestions={SAMPLE_QUESTIONS[article.id] ?? ARTICLE_QUESTIONS} />
+              {!DESKTOP && <Composer ref={composerRef} currentBlock={askAnchor} suggestions={SAMPLE_QUESTIONS[article.id] ?? ARTICLE_QUESTIONS} />}
             </div>
 
             <div className="rg-gutter" aria-hidden />
@@ -591,8 +594,8 @@ function ReaderInner({ article }: { article: Article }) {
         )}
 
         <Lens rootEl={articleEl} openHighlight={openHl} />
-        <ListenBar />
-        <SignInNudge />
+        {!DESKTOP && <ListenBar />}
+        {!DESKTOP && <SignInNudge />}
         <Notebook />
         <Peek peek={peek} />
         <Shortcuts />
@@ -619,7 +622,7 @@ function ReaderInner({ article }: { article: Article }) {
               <span>Select any passage to ask about it, explain it or highlight it.</span>
             ) : (
               <span>
-                Select any passage, then <span className="font-medium">just start typing</span> to ask about it.
+                Select any passage, then <span className="font-medium">just start typing</span> {DESKTOP ? "to make a note." : "to ask about it."}
               </span>
             )}
           </Toast>
@@ -657,4 +660,3 @@ function GlossSheet() {
     </div>
   );
 }
-
