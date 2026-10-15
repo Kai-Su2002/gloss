@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+# Dependencies survive pause/resume. Only restore a missing local template;
+# never overwrite keys supplied by an agent or install dependencies on wake.
+if [[ ! -f .env.local ]]; then
+  cp -- .env.example .env.local
+fi

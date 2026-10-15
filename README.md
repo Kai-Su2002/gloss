@@ -32,6 +32,23 @@
 5. Read: select text and type to ask, `/` asks about the whole text, `j` and `k` walk paragraphs, `B` glosses the whole text, `F` is focus mode, `?` lists every key
 6. Check: `npm run lint && npm run build`, then deploy with `vercel --prod` (set the same variables, plus `NEXT_PUBLIC_SITE_URL=https://usegloss.io`, in the project first)
 
+### Amp orbs
+
+`.agents/setup` uses the orb's preinstalled Node.js/npm, installs dependencies from
+`package-lock.json` (including development tools), and copies `.env.example` to
+`.env.local` only if it is missing. Amp snapshots the prepared dependencies for
+future orbs; warm setup runs reuse the installed packages instead of removing
+them with `npm ci`. `.agents/resume` only restores a missing environment template
+and never reinstalls dependencies.
+
+Setup does not authenticate services, run database migrations, or start a server.
+Configure the keys from `.env.example` through Amp secrets/environment settings or
+the orb's `.env.local` when those features are needed. Run `npm run db:migrate`
+only against an explicitly chosen development database. Start the dev server as a
+supervised service with `amp orb service start gloss --command 'npm run dev' --port 3100 --portal`.
+The setup hooks become active for future project orbs once committed to the
+project's default branch.
+
 ## Roadmap
 
 - [ ] ship it as a browser extension that opens the same margin on any page

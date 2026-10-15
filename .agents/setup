@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+# Node.js and npm are included in the orb base image; this repo has no version pin.
+printf 'Using Node.js %s and npm %s\n' "$(node --version)" "$(npm --version)"
+
+# npm honors package-lock.json and cheaply reuses a stale snapshot's node_modules.
+# Unlike npm ci, this does not delete and reinstall an already matching tree.
+printf 'Installing dependencies (including development tools)...\n'
+time npm install --include=dev --prefer-offline --no-audit --no-fund
+
+printf 'Preparing local environment template...\n'
+if [[ ! -f .env.local ]]; then
+  cp -- .env.example .env.local
+fi
+
+# Never authenticate services, migrate a remote database, or start servers here:
+# setup output is saved in a snapshot that other threads and members can reuse.
+printf 'Orb setup complete in %ss. Run npm run dev to start Gloss.\n' "$SECONDS"
