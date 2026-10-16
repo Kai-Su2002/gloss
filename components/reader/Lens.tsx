@@ -10,6 +10,7 @@ import { uid, useStore, type Anchor } from "@/lib/store";
 import { useReader } from "./context";
 import { WebSwitch } from "./WebSwitch";
 import { DESKTOP } from "@/lib/platform";
+import { docPayload } from "@/lib/doc";
 
 type LensState = {
   anchor: Anchor;
@@ -216,7 +217,7 @@ export function Lens({ rootEl, openHighlight }: { rootEl: HTMLElement | null; op
       const l = lensRef.current;
       if (!l) return;
       setDraft(initial);
-      setLens({ ...l, mode: DESKTOP ? "note" : "ask" });
+      setLens({ ...l, mode: "ask" });
       setMenu(false);
       if (!l.highlightId) setUI({ pending: l.anchor });
       window.getSelection()?.removeAllRanges();
@@ -393,7 +394,6 @@ export function Lens({ rootEl, openHighlight }: { rootEl: HTMLElement | null; op
           </form>
         ) : lens.mode === "actions" ? (
           <div className="no-scrollbar flex max-w-[calc(100vw-24px)] items-center gap-0.5 overflow-x-auto">
-            {!DESKTOP && <>
             <button
               type="button"
               onClick={() => toAsk("")}
@@ -403,6 +403,7 @@ export function Lens({ rootEl, openHighlight }: { rootEl: HTMLElement | null; op
               Ask
               <span className="lens-caret" aria-hidden />
             </button>
+            {!DESKTOP && <>
             <span className="mx-[3px] h-4 w-px shrink-0 bg-lens-mute/30" aria-hidden />
             {primary.map((a) => {
               const Icon = ICONS[a]!;
@@ -515,7 +516,7 @@ export function Lens({ rootEl, openHighlight }: { rootEl: HTMLElement | null; op
                 aria-label="Your question about the selected passage"
                 className="h-8 min-w-0 flex-1 bg-transparent text-[14px] text-lens-fg outline-none focus-visible:outline-none placeholder:text-lens-mute"
               />
-              <WebSwitch tone="lens" />
+              {!DESKTOP && <WebSwitch tone="lens" />}
               <button
                 type="submit"
                 disabled={!draft.trim()}
@@ -527,6 +528,12 @@ export function Lens({ rootEl, openHighlight }: { rootEl: HTMLElement | null; op
                 <ArrowUp size={16} strokeWidth={2.4} />
               </button>
             </div>
+            {DESKTOP && <p className="px-3 pb-1 pt-2 text-[11px] leading-snug text-lens-mute">{(() => {
+              try {
+                const doc = docPayload(ix, lens.anchor.start.b, "nearby", lens.anchor.end.b);
+                return `¶${doc.paras[0]?.n ?? 0}–¶${doc.paras.at(-1)?.n ?? 0} and your question will be sent to OpenAI. Nearby context, 32,000-character limit.`;
+              } catch (error) { return error instanceof Error ? error.message : "Cannot prepare context."; }
+            })()}</p>}
             {!draft && (
               <div className="mt-1 flex flex-wrap gap-1 border-t border-lens-mute/15 px-1 pb-0.5 pt-1.5">
                 {starters.map((q, i) => (

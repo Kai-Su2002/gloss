@@ -45,9 +45,10 @@ It does not wrap the hosted website or require a Next.js server at runtime.
   directory (`~/Library/Application Support/io.gloss.desktop/` on macOS).
   SQLite is authoritative; browser storage is only a synchronous UI cache.
   Back up the **whole directory with the app closed**, not just a live SQLite file.
-- No account, API key or network is needed. Fonts and PDF parsing are bundled.
-  AI, OCR, cloud sync, URL import and automatic classification are intentionally
-  unavailable in this first desktop version. It is not yet a full citation manager:
+- Local reading and notes need no account, API key or network. Fonts and PDF parsing
+  are bundled. Optional ChatGPT Q&A uses the connected account's plan in OpenAI's
+  cloud. OCR, cloud sync, URL import and automatic classification remain unavailable.
+  It is not yet a full citation manager:
   DOI metadata retrieval, BibTeX/RIS import and citation generation are future work.
 - PDFs are read as extracted text, not a full-fidelity page viewer. Do not remove
   your source files until you have an independent backup. Desktop and web libraries
@@ -64,6 +65,7 @@ npm install
 npm run desktop dev           # native app + Vite hot reload
 npm run desktop:build         # frontend and TypeScript check
 npm run desktop:test          # native storage and navigation tests
+node --test scripts/desktop-ai.test.mjs  # context budgets and citation validity
 ```
 
 `npm run desktop:dev` alone is a **browser UI preview**: it uses browser storage,
@@ -74,6 +76,43 @@ native storage. To build an Apple Silicon DMG, run on macOS:
 rustup target add aarch64-apple-darwin
 npm run desktop build -- --target aarch64-apple-darwin --bundles dmg -- --locked
 ```
+
+### ChatGPT Q&A (phase 1)
+
+In the installed app, open **AI → Continue with ChatGPT**. Authorization opens
+your system browser and returns through a temporary `127.0.0.1` callback. Choose
+an authorized account and a model from that account's catalog. No ChatGPT password
+or copied session cookie is accepted by Gloss. API Key and Local model are
+future entries, not working providers in this version.
+
+Select a passage and choose **Ask**, or press `/` to ask about the paper. Before
+submitting, the reader shows the paragraph range sent to OpenAI. Nearby context
+includes the selected paragraphs and up to two neighbors on either side. The
+document option sends the whole paper when it fits, otherwise a disclosed window;
+both have a 32,000-character source-text budget. Oversized selections are refused.
+No document text is uploaded merely by connecting an account.
+
+Answers stream into the margin and persist in local SQLite with their account/model
+metadata and original context. Follow-ups reuse that saved context and up to 12
+recent non-error conversation turns. Paragraph citations are navigable only when
+they were included in the sent context and still match the current document.
+This checks source identity, **not whether the model's claim is true**. Stopped,
+interrupted and quota-failed answers keep partial text but remain marked incomplete.
+Switching accounts/models, leaving a paper or closing the app cancels active requests.
+
+OAuth tokens stay in the OS credential service (macOS Keychain; Linux Secret
+Service), never SQLite or browser storage. A locked/unavailable credential service
+must be unlocked; Gloss does not fall back to plaintext. Disconnect removes the
+local session and attempts remote revocation; heed any warning and revoke access in
+ChatGPT Settings if needed. Plan eligibility, available models and limits are set by
+OpenAI. There is no automatic paid API fallback or web search in desktop Q&A.
+
+This uses the official [local/open-source token-sharing flow](https://developers.openai.com/siwc/token-sharing-open-source/).
+Do not assume it authorizes a commercial or hosted offering; check OpenAI's current
+eligibility and the repository's licensing before distribution. Browser preview
+cannot authorize accounts. Automated tests use controlled HTTP/vault fixtures;
+real subscription login/inference and macOS Keychain/DMG validation require a real
+account and a Mac and have not been exercised in the Linux orb.
 
 ### Releases and macOS security
 

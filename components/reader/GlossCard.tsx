@@ -11,6 +11,7 @@ import { undash } from "@/lib/article";
 import { Answer, keyLine, Sources, unmark } from "./Answer";
 import { Writing } from "./Writing";
 import { fmtCost, fmtTokens, useReader } from "./context";
+import { DESKTOP } from "@/lib/platform";
 
 type Props = {
   gloss: Gloss;
@@ -52,15 +53,15 @@ function KeyButton() {
         onClick={openKeyMenu}
         className="inline-flex h-8 items-center rounded-full bg-ink px-3.5 text-[12.5px] font-medium text-bg transition-transform active:scale-[0.97]"
       >
-        Add your Together key
+        {DESKTOP ? "Connect ChatGPT" : "Add your Together key"}
       </button>
-      <Show when="signed-out">
+      {!DESKTOP && <Show when="signed-out">
         <SignInButton mode="modal">
           <button type="button" className="inline-flex h-8 items-center rounded-full border border-rule px-3.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:border-rule-strong hover:text-ink">
             Sign in
           </button>
         </SignInButton>
-      </Show>
+      </Show>}
     </span>
   );
 }
@@ -77,7 +78,7 @@ export function marginStyle(top: number | undefined, fresh: boolean): CSSPropert
   };
 }
 
-function TurnBody({ t }: { t: Turn }) {
+function TurnBody({ t, context }: { t: Turn; context?: Gloss["desktopContext"] }) {
   if (t.error && !t.content)
     return (
       <>
@@ -94,7 +95,7 @@ function TurnBody({ t }: { t: Turn }) {
     );
   return (
     <>
-      <Answer text={t.content} streaming={t.streaming} sources={t.sources} />
+      <Answer text={t.content} streaming={t.streaming} sources={t.sources} context={context} />
       {t.error && <p className="mt-2 text-[12.5px] text-rubric-text">{t.error}</p>}
       {!t.streaming && t.sources?.length ? <Sources sources={t.sources} /> : null}
     </>
@@ -243,9 +244,10 @@ export const GlossCard = forwardRef<HTMLElement, Props>(function GlossCard({ glo
         <p className="mb-2.5 line-clamp-2 border-l-2 border-[var(--rubric-line)] pl-2.5 font-serif text-[15px] leading-snug text-ink-3">{gloss.anchor.quote}</p>
       )}
       {gloss.question && <p className="mb-1.5 text-[14px] font-medium leading-snug text-ink">{gloss.question}</p>}
+      {gloss.desktopContext && <p className="mb-2 text-[11px] leading-snug text-ink-3">OpenAI · saved ¶{gloss.desktopContext.doc.paras[0]?.n}–¶{gloss.desktopContext.doc.paras.at(-1)?.n}. Follow-ups send this context and up to 12 recent completed turns.</p>}
 
       <div className="gloss-body">
-        <TurnBody t={first} />
+        <TurnBody t={first} context={gloss.desktopContext} />
       </div>
 
       {gloss.turns.slice(1).map((t, i) =>
@@ -256,7 +258,7 @@ export const GlossCard = forwardRef<HTMLElement, Props>(function GlossCard({ glo
           </p>
         ) : (
           <div key={i} className="gloss-body mt-1.5">
-            <TurnBody t={t} />
+            <TurnBody t={t} context={gloss.desktopContext} />
           </div>
         )
       )}

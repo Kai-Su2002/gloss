@@ -1,5 +1,7 @@
+mod ai;
 pub mod storage;
 
+use ai::*;
 use storage::Storage;
 use tauri::{Manager, State, WebviewWindowBuilder};
 
@@ -57,12 +59,19 @@ fn local_navigation(url: &tauri::Url) -> bool {
 
 pub fn run() {
     tauri::Builder::default()
+        // One process owns rotating credentials for this application/host.
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_focus();
+            }
+        }))
         .setup(|app| {
             let directory = app.path().app_data_dir()?;
             std::fs::create_dir_all(&directory)?;
-            app.manage(
-                Storage::open(&directory.join("gloss.sqlite3")).map_err(std::io::Error::other)?,
-            );
+            let storage =
+                Storage::open(&directory.join("gloss.sqlite3")).map_err(std::io::Error::other)?;
+            app.manage(Ai::new(&storage).map_err(std::io::Error::other)?);
+            app.manage(storage);
             // Construct from config so the navigation guard exists before the first load.
             WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?
                 .on_navigation(local_navigation)
@@ -78,7 +87,15 @@ pub fn run() {
             save_pdf,
             load_pdf,
             delete_document,
-            forget_document
+            forget_document,
+            ai_status,
+            ai_login,
+            ai_cancel_login,
+            ai_models,
+            ai_select,
+            ai_disconnect,
+            ai_ask,
+            ai_cancel
         ])
         .build(tauri::generate_context!())
         .expect("failed to build Gloss desktop")

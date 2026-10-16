@@ -40,7 +40,8 @@ const KEYS: [string, string][] = [
 ];
 
 const DESKTOP_KEYS: [string, string][] = [
-  ["Select text, then type", "Make a note"],
+  ["Select text, then type", "Ask about the selection"],
+  ["/", "Ask about the document"],
   ["J  K", "Next and previous paragraph"],
   ["Enter", "Select the current paragraph"],
   ["N", "Notebook"],

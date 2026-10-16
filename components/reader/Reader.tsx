@@ -7,7 +7,7 @@ import { blockEl, selectBlock, spanIn } from "@/lib/anchor";
 import { displayArticle, isHeading, readingMinutes, titleClass, type Article } from "@/lib/article";
 import { ARTICLE_QUESTIONS } from "@/lib/actions";
 import { SAMPLE_QUESTIONS } from "@/lib/samples";
-import { fetchBrief } from "@/lib/ask";
+import { fetchBrief, stopArticle } from "@/lib/ask";
 import { BRAND } from "@/lib/brand";
 import { indexArticle } from "@/lib/doc";
 import { fetchText } from "@/lib/sync";
@@ -37,6 +37,8 @@ export function Reader({ id, initial }: { id: string; initial: Article | null })
   // A text renamed on the shelf keeps its new name here too.
   const renamed = useStore((s) => s.library.find((x) => x.id === id)?.title);
   const shown = useMemo(() => (article ? displayArticle(renamed && renamed !== article.title ? { ...article, title: renamed } : article) : null), [article, renamed]);
+
+  useEffect(() => () => stopArticle(id), [id]);
 
   useEffect(() => {
     hydrate();
@@ -576,7 +578,7 @@ function ReaderInner({ article }: { article: Article }) {
                 </div>
               </footer>
 
-              {!DESKTOP && <Composer ref={composerRef} currentBlock={askAnchor} suggestions={SAMPLE_QUESTIONS[article.id] ?? ARTICLE_QUESTIONS} />}
+              <Composer ref={composerRef} currentBlock={askAnchor} suggestions={SAMPLE_QUESTIONS[article.id] ?? ARTICLE_QUESTIONS} />
             </div>
 
             <div className="rg-gutter" aria-hidden />
@@ -622,7 +624,7 @@ function ReaderInner({ article }: { article: Article }) {
               <span>Select any passage to ask about it, explain it or highlight it.</span>
             ) : (
               <span>
-                Select any passage, then <span className="font-medium">just start typing</span> {DESKTOP ? "to make a note." : "to ask about it."}
+                Select any passage, then <span className="font-medium">just start typing</span> to ask about it.
               </span>
             )}
           </Toast>

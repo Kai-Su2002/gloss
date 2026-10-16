@@ -77,7 +77,7 @@ export function LocalImport({ onClose }: { onClose: () => void }) {
         </div>
         <p role="status" className="mt-4 break-words text-[13px] text-ink-2">{status}</p>
         {errors.length > 0 && <ul role="alert" className="mt-3 max-h-40 space-y-2 overflow-auto text-[13px] text-rubric-text">{errors.map((error, index) => <li key={index}>{error}</li>)}</ul>}
-        <p className="mt-4 text-[12px] leading-relaxed text-ink-3">Text PDFs up to 400 pages. Scanned PDFs need OCR before import. Cloud AI and sync are not included in this first desktop version.</p>
+        <p className="mt-4 text-[12px] leading-relaxed text-ink-3">Text PDFs up to 400 pages. Scanned PDFs need OCR before import. Optional ChatGPT Q&amp;A sends chosen text to OpenAI only when you ask. Cloud sync is not included.</p>
       </section>
     </div>, document.body,
   );

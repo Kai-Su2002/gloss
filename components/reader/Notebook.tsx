@@ -235,7 +235,7 @@ function GlossEntry({ g }: { g: Gloss }) {
             <div className="mt-2 grid grid-cols-[16px_minmax(0,1fr)] items-baseline gap-x-2">
               <span aria-hidden className="text-[11.5px] font-semibold leading-none text-ink-4">A</span>
               <div className="min-w-0">
-                <AnswerBody t={p.a} />
+                <AnswerBody t={p.a} context={g.desktopContext} />
               </div>
             </div>
           </div>
@@ -258,14 +258,15 @@ function GlossEntry({ g }: { g: Gloss }) {
   );
 }
 
-function AnswerBody({ t }: { t?: Turn }) {
+function AnswerBody({ t, context }: { t?: Turn; context?: Gloss["desktopContext"] }) {
   if (!t || (t.streaming && !t.content)) {
     return <Writing />;
   }
   if (t.error && !t.content) return <p className="text-[13.5px] text-rubric-text">{t.error}</p>;
   return (
     <Clamp watch={t.content}>
-      <Answer text={t.content} streaming={t.streaming} sources={t.sources} />
+      <Answer text={t.content} streaming={t.streaming} sources={t.sources} context={context} />
+      {t.error && <p className="mt-2 text-[12.5px] text-rubric-text">{t.error}</p>}
       {!t.streaming && t.sources?.length ? <Sources sources={t.sources} /> : null}
     </Clamp>
   );

@@ -6,6 +6,8 @@ import type { Article, BriefData } from "./article";
 import { modelOf, type ModelKey, type Source, type Usage } from "./models";
 import { DEFAULT_SETTINGS, SETTINGS_KEY, type Marker, type Settings } from "./settings";
 import { desktopRead, desktopWrite, hasNativeStorage, storageError } from "./desktop-storage";
+import type { DocPayload } from "./prompts";
+import type { ContextScope } from "./doc";
 
 /** A point in the text: block id and a character offset into its plain text. */
 export type Point = { b: string; o: number };
@@ -25,6 +27,8 @@ export type Turn = {
   sources?: Source[];
   error?: string;
   streaming?: boolean;
+  /** Non-secret provenance. Subscription requests have no dollar-cost receipt. */
+  connection?: { provider: "chatgpt"; accountId: string; model: string };
 };
 
 export type Gloss = {
@@ -38,6 +42,8 @@ export type Gloss = {
   question?: string;
   turns: Turn[];
   createdAt: number;
+  /** Immutable context shared by follow-ups, with original paragraph/block bindings. */
+  desktopContext?: { doc: DocPayload; blocks: Record<number, string>; scope: ContextScope };
 };
 
 /**
@@ -191,7 +197,8 @@ export const useStore = create<State>((set, get) => ({
         for (const t of g.turns) {
           if (t.streaming) {
             t.streaming = false;
-            if (!t.content) t.error = "Interrupted. Ask again to retry.";
+            if (t.connection) t.error = "Interrupted. This answer did not complete. Ask again to retry.";
+            else if (!t.content) t.error = "Interrupted. Ask again to retry.";
           }
         }
       }

@@ -8,6 +8,7 @@ import { desktopRead, hasNativeStorage, storageError } from "@/lib/desktop-stora
 import { sampleById } from "@/lib/samples";
 import { applySettings, SETTINGS_KEY } from "@/lib/settings";
 import { flushStore, useStore } from "@/lib/store";
+import { refreshAI } from "@/lib/desktop-ai";
 import "@/app/globals.css";
 import "@/app/library/library.css";
 import "@fontsource-variable/newsreader/opsz.css";
@@ -28,6 +29,7 @@ function App() {
   useEffect(() => {
     const onError = (event: Event) => setError((event as CustomEvent<string>).detail);
     window.addEventListener("gloss:storage-error", onError);
+    if (hasNativeStorage()) void refreshAI().catch(() => {});
     return () => window.removeEventListener("gloss:storage-error", onError);
   }, []);
   const id = route.startsWith("/read/") ? decodeURIComponent(route.slice(6)) : null;

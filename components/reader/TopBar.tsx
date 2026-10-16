@@ -11,6 +11,7 @@ import { barBtn } from "@/components/ui/Popover";
 import { useGlosses, useHighlights, useStore } from "@/lib/store";
 import { useReader } from "./context";
 import { DESKTOP } from "@/lib/platform";
+import { AIConnections } from "@/components/ui/AIConnections";
 
 export function TopBar({ currentN, pastTitle, listenFrom }: { currentN: number | null; pastTitle: boolean; listenFrom: () => string | null }) {
   const { ix, jumpTo } = useReader();
@@ -67,8 +68,9 @@ export function TopBar({ currentN, pastTitle, listenFrom }: { currentN: number |
       setHidden(false);
       setPeek(true);
     };
-    window.addEventListener("gloss:key", show);
-    return () => window.removeEventListener("gloss:key", show);
+    const event = DESKTOP ? "gloss:ai" : "gloss:key";
+    window.addEventListener(event, show);
+    return () => window.removeEventListener(event, show);
   }, []);
 
   const tucked = focusMode ? !peek && !scrolledUp && !notebookOpen : hidden && !notebookOpen;
@@ -124,6 +126,7 @@ export function TopBar({ currentN, pastTitle, listenFrom }: { currentN: number |
           </span>
           {!DESKTOP && <ListenButton from={listenFrom} />}
           <SettingsMenu />
+          {DESKTOP && <AIConnections />}
           {!DESKTOP && <KeyMenu />}
           <button
             type="button"

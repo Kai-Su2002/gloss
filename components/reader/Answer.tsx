@@ -1,9 +1,14 @@
 "use client";
 
-import { Fragment, memo, type ReactNode } from "react";
+import { createContext, Fragment, memo, useContext, type ReactNode } from "react";
 import { undash } from "@/lib/article";
 import type { Source } from "@/lib/models";
+import type { Gloss } from "@/lib/store";
+import { citationMatches } from "@/lib/doc";
+import { DESKTOP } from "@/lib/platform";
 import { useReader } from "./context";
+
+const CitationContext = createContext<Gloss["desktopContext"]>(undefined);
 
 /**
  * A deliberately small Markdown subset for glosses: paragraphs, lists, bold,
@@ -78,14 +83,16 @@ function WebCite({ s }: { s: Source }) {
   );
 }
 
-function Cite({ n, label }: { n: number; label: string }) {
+function Cite({ n, end, label }: { n: number; end: number; label: string }) {
   const { jumpTo, peek, ix } = useReader();
-  const exists = ix.byNumber.has(n);
+  const context = useContext(CitationContext);
+  const exists = DESKTOP ? !!context && citationMatches(ix, context, n, end) : ix.byNumber.has(n);
   return (
     <button
       type="button"
       className="cite"
       disabled={!exists}
+      title={!exists ? "Source not supplied or changed since this answer" : undefined}
       onClick={(e) => {
         e.stopPropagation();
         peek(null);
@@ -109,7 +116,7 @@ function citesFrom(raw: string): ReactNode[] {
   while ((m = re.exec(raw))) {
     const a = Number(m[1]);
     const label = m[2] ? `${m[1]}-${m[2]}` : m[1];
-    out.push(<Cite key={`${m.index}`} n={a} label={label} />);
+    out.push(<Cite key={`${m.index}`} n={a} end={m[2] ? Number(m[2]) : a} label={label} />);
   }
   return out;
 }
@@ -160,12 +167,12 @@ function tokens(text: string, plain = false, sources?: Source[]): ReactNode[] {
 }
 
 /** `plain` drops paragraph citations, for answers that live outside a reader. */
-function AnswerImpl({ text, streaming, plain = false, sources }: { text: string; streaming?: boolean; plain?: boolean; sources?: Source[] }) {
+function AnswerImpl({ text, streaming, plain = false, sources, context }: { text: string; streaming?: boolean; plain?: boolean; sources?: Source[]; context?: Gloss["desktopContext"] }) {
   const parts = parseBlocks(undash(plain ? text.replace(/\s?\[\s*¶[^\]]{0,60}\]/g, "") : text));
   const caret = streaming ? <span className="caret" aria-hidden /> : null;
   if (!parts.length) return streaming ? <p>{caret}</p> : null;
   return (
-    <>
+    <CitationContext value={context}>
       {parts.map((p, i) => {
         const isLast = i === parts.length - 1;
         if (p.kind === "p")
@@ -187,7 +194,7 @@ function AnswerImpl({ text, streaming, plain = false, sources }: { text: string;
           </L>
         );
       })}
-    </>
+    </CitationContext>
   );
 }
 

@@ -230,7 +230,7 @@ function EmptyMargin({ top }: { top: number }) {
       style={{ top, animationDelay: "500ms" }}
     >
       <p className="font-medium text-ink-2">This area is for notes.</p>
-      <p className="mt-1">{DESKTOP ? "Select any passage, then start typing a note. Your thoughts stay beside the text." : "Select any passage, then just start typing to ask."}</p>
+      <p className="mt-1">{DESKTOP ? "Select a passage to ask ChatGPT, or add an offline note. Connect your account using AI above." : "Select any passage, then just start typing to ask."}</p>
     </div>
   );
 }

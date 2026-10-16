@@ -7,6 +7,7 @@ import { Lockup } from "@/components/brand/Gloss";
 import { KeyMenu } from "@/components/ui/KeyMenu";
 import { SettingsMenu } from "@/components/ui/SettingsMenu";
 import { DESKTOP } from "@/lib/platform";
+import { AIConnections } from "./AIConnections";
 
 /**
  * The bar across the top of the home page and the library: the same pieces in
@@ -31,6 +32,7 @@ export function TopBar({ here, onLibrary }: { here?: "library"; onLibrary?: () =
           <span className="max-sm:hidden">Library</span>
         </Link>
         <SettingsMenu compact />
+        {DESKTOP && <AIConnections />}
         {!DESKTOP && <KeyMenu />}
         {!DESKTOP && <Account />}
       </nav>
